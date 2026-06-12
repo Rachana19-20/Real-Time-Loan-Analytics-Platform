@@ -1,49 +1,306 @@
-# Spark Structured Streaming Demo
-[Spark Structured Streaming](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html) data pipeline that processes movie ratings data in real-time.
+# Real-Time Loan Analytics Platform
 
-Consumes events from a Kafka topic in Avro, transforms and writes to an [Apache Iceberg](https://iceberg.apache.org/) table.
+## Overview
 
-The pipeline handles updates and duplicate events by merging to the destination table based on the `event_id`.
+The Real-Time Loan Analytics Platform is a streaming analytics solution that enables financial institutions to monitor loan performance in real time. The platform uses Apache Kafka for event streaming, MySQL for data storage, and Streamlit for interactive dashboards.
 
-Late arriving events from more than 5 days ago are discarded (for performance reasons in the merge - to leverage partitioning and avoid full scans).
+The system continuously processes loan events such as approvals, rejections, repayments, and pending applications, providing instant insights into loan portfolios, borrower behavior, and operational performance.
 
-## Data Architecture
-<img width="1731" alt="image" src="https://github.com/user-attachments/assets/79551b02-e192-4203-9d6b-2ce07253056f" />
+---
 
-## Local setup
-We spin up a local Kafka cluster with Schema Registry based on the [Docker Compose file provided by Confluent](https://github.com/confluentinc/cp-all-in-one/blob/8.0.0-post/cp-all-in-one-community/docker-compose.yml).
+## Features
 
-We install a local Spark Structured Streaming app using uv.
+* Real-time loan event streaming using Apache Kafka
+* Automated data ingestion and processing
+* MySQL-based data storage
+* Interactive Streamlit dashboard
+* Live KPI monitoring
+* Loan approval and rejection analytics
+* Real-time trend analysis
+* Searchable loan records
+* Auto-refresh dashboard updates
+* Docker support for deployment
 
-## Dependency management
-Dependabot is configured to periodically upgrade repo dependencies. See [dependabot.yml](.github/dependabot.yml).
+---
 
-## Running instructions
-Run the following commands in order:
-* `make setup` to install the Spark Structured Streaming app on a local Python env.
-* `make kafka-up` to start local Kafka in Docker.
-* `make kafka-create-topic` to create the Kafka topic we will use.
-* `make kafka-produce-test-events` to start writing messages to the topic.
+## Tech Stack
 
-On a separate console, run:
-* `make streaming-app-run` to start the Spark Structured Streaming app.
+### Backend
 
-On a separate console, you can check the output dataset by running:
-```python
-$ make pyspark
->>> df = spark.read.table("movie_ratings")
->>> df.show()
-+--------------------+--------------------+--------------------+------+-----------+----------------+-----------+
-|            event_id|             user_id|            movie_id|rating|is_approved|rating_timestamp|rating_date|
-+--------------------+--------------------+--------------------+------+-----------+----------------+-----------+
-|a41847d0-37de-11f...|a418482a-37de-11f...|a418483e-37de-11f...|   1.8|      false|      1748008982| 2025-05-23|
-|a46519c0-37de-11f...|a4651a42-37de-11f...|a4651a60-37de-11f...|   6.9|      false|      1748008982| 2025-05-23|
-|a4c15a50-37de-11f...|a4c15ac8-37de-11f...|a4c15ae6-37de-11f...|   5.0|      false|      1748008983| 2025-05-23|
-|a79b2b98-37de-11f...|a79b2c10-37de-11f...|a79b2c2e-37de-11f...|   4.0|      false|      1748008988| 2025-05-23|
-+--------------------+--------------------+--------------------+------+-----------+----------------+-----------+
+* Python
+* Apache Kafka
+* MySQL
+
+### Frontend & Visualization
+
+* Streamlit
+* Matplotlib
+* Pandas
+
+### Supporting Libraries
+
+* kafka-python
+* mysql-connector-python
+* ConfigParser
+* Logging
+* JSON
+
+---
+
+
+## Prerequisites
+
+### Hardware Requirements
+
+* Processor: Intel Core i3 or above
+* RAM: Minimum 8 GB
+* Storage: 20 GB Free Space
+* Stable Internet Connection
+
+### Software Requirements
+
+* Python 3.10 or 3.11
+* Apache Kafka 3.0+
+* Zookeeper
+* MySQL 8.0+
+* Streamlit
+* Git (Optional)
+* Docker (Optional)
+
+---
+
+# Database Setup
+
+### Step 1: Create Database
+
+```sql
+CREATE DATABASE loan_data;
+USE loan_data;
 ```
 
-## Table internal maintenance
-The streaming microbatches can produce many small files and constant table snapshots.
+### Step 2: Create Loan Events Table
 
-In order to tackle these issues, the recommended Iceberg table maintenance operations can be used, [see doc](https://iceberg.apache.org/docs/latest/spark-structured-streaming/#maintenance-for-streaming-tables).
+```sql
+CREATE TABLE loan_events (
+    loan_id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    status ENUM('pending','approved','rejected','closed') DEFAULT 'pending',
+    timestamp BIGINT NOT NULL,
+    PRIMARY KEY (loan_id)
+);
+```
+
+### Step 3: Configure Database Connection
+
+Update:
+
+```bash
+config/config.ini
+```
+
+```ini
+[mysql]
+host = localhost
+user = root
+password = your_password
+database = loan_data
+```
+
+### Step 4: Test Connection
+
+```bash
+python test_mysql_connection.py
+```
+
+Expected Output:
+
+```bash
+Connection Successful!
+Database: loan_data
+Table: loan_events
+```
+
+---
+
+# Installation
+
+### Clone Repository
+
+```bash
+git clone <repository-url>
+cd Real_Time_Loan_Analytics_Platform
+```
+
+### Create Virtual Environment
+
+#### Windows
+
+```bash
+py -3.10 -m venv venv_streamlit
+venv_streamlit\Scripts\activate
+```
+
+#### Linux/Mac
+
+```bash
+python3.10 -m venv venv_streamlit
+source venv_streamlit/bin/activate
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Or manually:
+
+```bash
+pip install streamlit
+pip install pandas
+pip install matplotlib
+pip install kafka-python
+pip install mysql-connector-python
+pip install numpy
+pip install plotly
+pip install streamlit-autorefresh
+```
+
+---
+
+# Running the Project Locally
+
+## 1. Start Zookeeper
+
+```bash
+cd C:\kafka
+
+.\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
+```
+
+## 2. Start Kafka Broker
+
+```bash
+cd C:\kafka
+
+.\bin\windows\kafka-server-start.bat .\config\server.properties
+```
+
+## 3. Create Kafka Topic
+
+```bash
+.\bin\windows\kafka-topics.bat --create \
+--topic loans \
+--bootstrap-server localhost:9092
+```
+
+---
+
+## 4. Start Kafka Consumer
+
+```bash
+python kafka_consumer.py
+```
+
+---
+
+## 5. Start Loan Event Producer
+
+```bash
+python produce_test_events.py
+```
+
+This generates sample loan events and streams them into Kafka.
+
+---
+
+## 6. Launch Streamlit Dashboard
+
+```bash
+streamlit run loan_dashboard.py
+```
+
+Dashboard URL:
+
+```bash
+http://localhost:8501
+```
+
+The dashboard automatically refreshes and displays live loan analytics.
+
+---
+
+## Dashboard Metrics
+
+The platform provides:
+
+* Total Loans Processed
+* Total Loan Amount
+* Approved Loans
+* Pending Loans
+* Approval Rate
+* Average Loan Amount
+* Loan Amount by Status
+* Loan Count by Status
+* Average Loan Trend
+* Top Borrowers
+* Detailed Loan Records
+
+---
+
+## Docker Deployment (Optional)
+
+Start all services:
+
+```bash
+docker-compose up
+```
+
+Stop services:
+
+```bash
+docker-compose down
+```
+
+---
+
+## Workflow
+
+```text
+Loan Events
+      │
+      ▼
+Kafka Producer
+      │
+      ▼
+Kafka Topic (loans)
+      │
+      ▼
+Kafka Consumer
+      │
+      ▼
+MySQL Database
+      │
+      ▼
+Streamlit Dashboard
+      │
+      ▼
+Real-Time Loan Analytics
+```
+
+---
+
+## Future Enhancements
+
+* Loan Risk Prediction
+* Fraud Detection
+* Borrower Credit Scoring
+* AWS/GCP Deployment
+* Role-Based Access Control
+* Power BI Integration
+* Alerting & Notification System
+
+
+
+A scalable real-time financial analytics solution built using Kafka, MySQL, Python, and Streamlit for monitoring and analyzing loan performance with low-latency insights.
